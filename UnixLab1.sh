@@ -1,19 +1,20 @@
-#!/bin/sh
+#!/bin/sh -e
 
 Temp_Dir=$(mktemp -d)
 Path=$PWD
 File=$1
 
+exit_handler()
+{
+    local rc=$?
+    trap - EXIT
+    rm -rf -- $Temp_Dir
+    exit $rc
+}
+trap exit_handler EXIT HUP INT QUIT PIPE TERM
 
-if [ ! -d "$Temp_Dir" ]; then
-    echo "Не удалось создать Temp_Dir выход с ошибкой." >&2
-    exit 1
-fi
 
-if ! cd "$Temp_Dir"; then
-    echo "Не удалось перейти в каталог $Temp_Dir" >&2
-    exit 1
-fi
+cd "$Temp_Dir"
 
 File_Name=$(grep '&Output:' "$Path/$File" | cut -d: -f2)
 
@@ -26,5 +27,3 @@ ls -l "$Temp_Dir"
 
 cd / || exit 1
 rm -rf "$Temp_Dir"
-
-
