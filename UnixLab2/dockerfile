@@ -1,0 +1,11 @@
+FROM ubuntu
+
+WORKDIR /app
+
+COPY script.sh /app/script.sh
+
+RUN chmod +x /app/script.sh
+
+VOLUME ["/shared"]
+
+CMD ["/app/script.sh"]
