@@ -8,29 +8,27 @@ mkdir -p "$SHARED_DIR"
 
 while true; do
 
-    filename=""
-
+    temp_filename=$(mktemp)
+    echo "$temp_filename"
     (
     flock -x 200
         for i in $(seq -f "%03g" 1 100); do
             if [[ ! -f "$SHARED_DIR/$i" ]]; then
-                filename="$i"
-                echo "$CONTAINER_ID $filename" > "$SHARED_DIR/$filename"
-                cat "$SHARED_DIR/$filename"
+                echo "$i" > "$temp_filename"
+                echo "$CONTAINER_ID $i" > "$SHARED_DIR/$i"
+                cat "$SHARED_DIR/$i"
                 break
             fi
         done
     ) 200>"$LOCK_FILE"
 
+    filename=$(cat "$temp_filename")
 
     sleep 2
 
     if [[ -f "$SHARED_DIR/$filename" ]]; then
-       (
-        flock -x 200
         rm -f "$SHARED_DIR/$filename"
         echo "Deleted: $filename"
-        ) 200>"$LOCK_FILE"
     fi
 
     sleep 2
