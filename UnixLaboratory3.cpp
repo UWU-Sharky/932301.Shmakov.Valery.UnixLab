@@ -14,13 +14,15 @@
 
 namespace fs = std::filesystem;
 
+std::vector<std::string> filelist;
+
 std::string calcSHA1(const fs::path filepath)
 {
 	std::ifstream file(filepath, std::ios::binary);\
 
 	if (!file.is_open())
 	{
-		std::cerr << "Не удалось открыть файл: " << filepath.u8string() << std::endl;
+        throw std::runtime_error("Не удалось открыть файл: " + filepath.u8string());
 	}
 
     SHA_CTX context;
@@ -46,31 +48,36 @@ std::string calcSHA1(const fs::path filepath)
     return ss.str();
 }
 
+void searchfiles(std::string path_to_directory)
+{
+    try {
+        for (const auto& entry : fs::directory_iterator(path_to_directory))
+        {
+            fs::path entry_path = entry.path();
+
+            if (fs::is_regular_file(entry_path))
+            {
+                filelist.push_back(entry_path.string());
+            }
+            else if (fs::is_directory(entry_path))
+            {
+                searchfiles(entry_path.string());
+            }
+
+        }
+    }
+    catch (const fs::filesystem_error& e) {
+        throw std::runtime_error("Ошибка файловой системы: " + std::string(e.what()));
+    }
+
+}
+
 
 int main()
 {
 	std::setlocale(0, "");
 
-	std::vector<std::string> filelist;
-
-	std::string path_to_directory = ".";
-
-	try {
-		for (const auto& entry : fs::directory_iterator(path_to_directory))
-		{ 
-			fs::path entry_path = entry.path();
-
-			if (fs::is_regular_file(entry_path))
-			{
-				filelist.push_back(entry_path.string());
-			}
-		}
-	}
-
-
-	catch (const fs::filesystem_error& e) {
-		std::cerr << "Ошибка файловой системы: " << e.what() << std::endl;
-	}
+    searchfiles(".");
 
     std::map<std::string, std::string> catalog;
 
@@ -119,7 +126,7 @@ int main()
                 }
                 else
                 {
-                    std::cerr << "✗ Ошибка создания ссылки" << std::endl;
+                    throw std::runtime_error("✗ Ошибка создания ссылки");
                 }
             }
         }
