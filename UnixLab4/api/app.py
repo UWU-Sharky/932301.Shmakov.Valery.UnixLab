@@ -6,12 +6,13 @@ import json
 import uuid
 import time
 import os
+import signal
+import sys
 
 app = FastAPI()
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# Подключение к Kafka
 producer = None
 while producer is None:
     try:
@@ -24,9 +25,22 @@ while producer is None:
         print("Waiting for Kafka...")
         time.sleep(2)
 
+
+def signal_handler(signum, frame):
+    print("\nПолучен сигнал SIGTERM, завершаю работу...")
+    if producer:
+        try:
+            producer.close(timeout=5)
+            print("Kafka producer закрыт")
+        except Exception as e:
+            print(f"Ошибка при закрытии producer: {e}")
+    sys.exit(0)
+
+
+signal.signal(signal.SIGTERM, signal_handler)
+
 @app.get("/", response_class=HTMLResponse)
 async def home():
-    # Читаем HTML из файла
     with open("static/index.html", "r", encoding="utf-8") as f:
         html_content = f.read()
     return html_content
@@ -72,7 +86,6 @@ async def get_stats():
 
 @app.get("/api/scale/{n}")
 async def scale_workers(n: int):
-    """Получить команду для масштабирования"""
     if n < 1 or n > 10:
         raise HTTPException(status_code=400, detail="Количество воркеров должно быть от 1 до 10")
     
