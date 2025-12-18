@@ -62,8 +62,7 @@ for message in consumer:
     time.sleep(5) 
     
     print(f"Готово! Билет {booking['booking_id']} забронирован")
-    print(f"{'='*50}\n")
-    
+    print(f"{'='*50}\n")    
     if shutdown_flag:
         break
 
