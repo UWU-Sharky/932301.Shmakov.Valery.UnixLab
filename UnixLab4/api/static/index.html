@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Демо бронирования авиабилетов</title>
+  <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <header class="app-header">
+      <h1>Сервис для продажи дешевых авиабилетов.</h1>
+    </header>
+
+    <main class="app-main">
+      <section class="card">
+        <h2>Создать демо‑бронирование</h2>
+        <p class="card-text">
+          Рейс <strong>SU‑100</strong>: Москва → Нью‑Йорк. Нажмите кнопку ниже, чтобы отправить запрос
+          на сервер по адресу <code>/api/book</code>.
+        </p>
+
+        <button id="book-btn" class="button" onclick="bookDemo()">
+          Создать бронирование
+        </button>
+
+        <div class="result" id="result">
+          Бронь ещё не создавалась.
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Статус системы</h2>
+        <p class="card-text">
+          Краткая информация от сервера по адресу <code>/api/stats</code>.
+        </p>
+        <div class="status" id="status">Загрузка…</div>
+        <button class="link-button" onclick="updateStatus()">Обновить статус</button>
+      </section>
+    </main>
+
+  </div>
+
+  <script>
+    async function updateStatus() {
+      const el = document.getElementById("status");
+      if (!el) return;
+
+      el.textContent = "Загрузка…";
+      try {
+        const res = await fetch("/api/stats");
+        if (!res.ok) {
+          throw new Error();
+        }
+        const data = await res.json();
+        el.textContent = `Статус: ${data.status}, Kafka: ${data.kafka}, воркеры: ${data.workers}`;
+      } catch (e) {
+        el.textContent = "Не удалось получить статус сервиса.";
+      }
+    }
+
+    async function bookDemo() {
+      const button = document.getElementById("book-btn");
+      const result = document.getElementById("result");
+      if (!button || !result) return;
+
+      const originalText = button.textContent;
+      button.disabled = true;
+      button.textContent = "Отправляем…";
+      result.textContent = "Создаём бронирование…";
+
+      try {
+        const res = await fetch("/api/book", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: "{}"
+        });
+
+        if (!res.ok) {
+          throw new Error();
+        }
+
+        const data = await res.json();
+        result.textContent =
+          `Бронь ${data.booking_id}\n` +
+          `Рейс: ${data.flight}\n` +
+          `Стоимость: ${data.price} ₽\n` +
+          `Статус: ${data.status}\n` +
+          `Сообщение: ${data.message}`;
+      } catch (e) {
+        result.textContent =
+          "Ошибка при создании бронирования.";
+      } finally {
+        button.disabled = false;
+        button.textContent = originalText;
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      updateStatus();
+    });
+  </script>
+</body>
+</html>
+
+
