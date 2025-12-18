@@ -1,7 +1,6 @@
 version: '3.8'
 
 services:
-  # 1. Kafka (брокер)
   kafka:
     hostname: kafka
     image: wurstmeister/kafka
@@ -17,15 +16,13 @@ services:
     image: wurstmeister/zookeeper
     ports: ["2181:2181"]
 
-  # 2. API Gateway (1 контейнер)
   api:
     build: ./api
     ports: ["8000:8000"]
     depends_on: [kafka]
 
-  # 3. Воркеры (МНОГО реплик одного типа!)
   booking-worker:
     build: ./worker
     depends_on: [kafka]
     deploy:
-      replicas: 4  # ← Горизонтальное масштабирование!
+      replicas: 4
